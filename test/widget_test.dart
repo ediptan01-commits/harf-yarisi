@@ -14,5 +14,7 @@ void main() {
     expect(find.text('STOP!'), findsNothing);
     expect(find.text('■ STOP!'), findsOneWidget);
     expect(find.text('60'), findsOneWidget);
+    await tester.tap(find.text('■ STOP!'));
+    await tester.pump();
   });
 }
