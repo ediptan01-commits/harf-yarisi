@@ -1,0 +1,35 @@
+name: Android APK AAB
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+      - name: Generate Android project
+        run: |
+          flutter create --platforms=android --org com.teknolojix .
+          flutter pub get
+          sed -i 's/android:label="harf_yarisi"/android:label="Harf Yarışı"/' android/app/src/main/AndroidManifest.xml
+      - name: Test
+        run: flutter test
+      - name: Build APK
+        run: flutter build apk --release
+      - name: Build AAB
+        run: flutter build appbundle --release
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Harf-Yarisi-APK
+          path: build/app/outputs/flutter-apk/app-release.apk
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Harf-Yarisi-AAB
+          path: build/app/outputs/bundle/release/app-release.aab
