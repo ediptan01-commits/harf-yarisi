@@ -81,17 +81,17 @@ class _GamePageState extends State<GamePage> with WidgetsBindingObserver {
       done = true;
     });
   }
-  Widget card(int index) => Container(
-    padding: const EdgeInsets.fromLTRB(10, 9, 10, 7),
+  Widget card(int index, {bool keyboard = false}) => Container(
+    padding: keyboard ? const EdgeInsets.fromLTRB(8, 4, 8, 2) : const EdgeInsets.fromLTRB(10, 7, 10, 4),
     decoration: BoxDecoration(color: Colors.white, border: Border.all(color: const Color(0xFFFFD8AD)), borderRadius: BorderRadius.circular(15)),
     child: Column(crossAxisAlignment: CrossAxisAlignment.start, mainAxisAlignment: MainAxisAlignment.center, children: [
       Row(children: [
-        Icon(pictograms[index], size: 17, color: orange),
+        Icon(pictograms[index], size: keyboard ? 13 : 16, color: orange),
         const SizedBox(width: 5),
-        Expanded(child: Text(categories[index], style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 12, color: Color(0xFF804300)))),
+        Expanded(child: Text(categories[index], style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 11, color: Color(0xFF804300)))),
         if (done) Icon(marked[index] ? Icons.check_circle : Icons.cancel_outlined, size: 14, color: marked[index] ? Colors.green : Colors.grey),
       ]),
-      const SizedBox(height: 3),
+      SizedBox(height: keyboard ? 0 : 3),
       TextField(
         controller: inputs[index],
         focusNode: nodes[index],
@@ -99,8 +99,8 @@ class _GamePageState extends State<GamePage> with WidgetsBindingObserver {
         textCapitalization: TextCapitalization.words,
         textInputAction: index == 5 ? TextInputAction.done : TextInputAction.next,
         onSubmitted: (_) { if(index < 5) {nodes[index+1].requestFocus();} else {FocusManager.instance.primaryFocus?.unfocus();} },
-        style: const TextStyle(fontSize: 14),
-        decoration: const InputDecoration(isDense: true, hintText: 'Kelime yaz...', hintStyle: TextStyle(fontSize: 12), contentPadding: EdgeInsets.symmetric(vertical: 8), enabledBorder: UnderlineInputBorder(borderSide: BorderSide(color: Color(0xFFFFD8AD))), focusedBorder: UnderlineInputBorder(borderSide: BorderSide(color: orange))),
+        style: TextStyle(fontSize: keyboard ? 12 : 14),
+        decoration: const InputDecoration(isDense: true, hintText: 'Kelime yaz...', hintStyle: TextStyle(fontSize: 12), contentPadding: EdgeInsets.symmetric(vertical: 5), enabledBorder: UnderlineInputBorder(borderSide: BorderSide(color: Color(0xFFFFD8AD))), focusedBorder: UnderlineInputBorder(borderSide: BorderSide(color: orange))),
       ),
     ]),
   );
@@ -118,6 +118,7 @@ class _GamePageState extends State<GamePage> with WidgetsBindingObserver {
   ));
   @override
   Widget build(BuildContext context) {
+    final keyboard = MediaQuery.viewInsetsOf(context).bottom > 0;
     final compact = MediaQuery.sizeOf(context).height < 720;
     final filled = inputs.where((c) => c.text.trim().isNotEmpty).length;
     return Scaffold(
@@ -126,56 +127,72 @@ class _GamePageState extends State<GamePage> with WidgetsBindingObserver {
       body: SafeArea(child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 13),
         child: Column(children: [
-          SizedBox(height: compact ? 4 : 12),
+          SizedBox(height: keyboard ? 0 : compact ? 4 : 8),
           Row(children: [
-            Container(padding: const EdgeInsets.all(8), decoration: BoxDecoration(color: orange, borderRadius: BorderRadius.circular(12)), child: const Icon(Icons.auto_awesome, color: Colors.white)),
+            Container(padding: EdgeInsets.all(keyboard ? 5 : 7), decoration: BoxDecoration(color: orange, borderRadius: BorderRadius.circular(10)), child: Icon(Icons.auto_awesome, color: Colors.white, size: keyboard ? 16 : 22)),
             const SizedBox(width: 9),
-            const Expanded(child: Text('Harf Yarışı', style: TextStyle(fontSize: 23, fontWeight: FontWeight.w900, color: Color(0xFF713C00)))),
-            Chip(label: Text('$round. TUR'), backgroundColor: const Color(0xFFFFE8CC), side: BorderSide.none),
+            Expanded(child: Text('Harf Yarışı', style: TextStyle(fontSize: keyboard ? 18 : 21, fontWeight: FontWeight.w900, color: Color(0xFF713C00)))),
+            Text('$round. TUR', style: const TextStyle(color: Color(0xFFB75D00), fontWeight: FontWeight.bold, fontSize: 12)),
           ]),
-          const SizedBox(height: 10),
-          Container(
+          SizedBox(height: keyboard ? 5 : 9),
+          if (keyboard) Container(
             width: double.infinity,
-            padding: EdgeInsets.all(compact ? 12 : 15),
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
+            decoration: BoxDecoration(color: orange, borderRadius: BorderRadius.circular(13)),
+            child: Row(children: [
+              Text(letter, style: const TextStyle(color: Colors.white, fontSize: 29, fontWeight: FontWeight.w900)),
+              const Spacer(),
+              const Icon(Icons.timer_outlined, size: 16, color: Colors.white),
+              Text(' $seconds sn', style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold)),
+              const SizedBox(width: 18),
+              const Icon(Icons.emoji_events_outlined, size: 16, color: Colors.white),
+              Text(' $points', style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold)),
+            ]),
+          ) else Container(
+            width: double.infinity,
+            padding: EdgeInsets.all(compact ? 9 : 12),
             decoration: BoxDecoration(gradient: const LinearGradient(colors: [Color(0xFFFFAA4D), orange]), borderRadius: BorderRadius.circular(22)),
             child: Column(children: [
               Row(children: [stat('KALAN SÜRE', '$seconds', Icons.timer), const SizedBox(width: 8), stat('TOPLAM PUAN', '$points', Icons.emoji_events)]),
-              const SizedBox(height: 9),
+              const SizedBox(height: 3),
               const Text('BU TURUN HARFİ', style: TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.bold, letterSpacing: 1.5)),
-              Text(letter, style: TextStyle(color: Colors.white, fontSize: compact ? 51 : 68, fontWeight: FontWeight.w900, height: 1.04)),
+              Text(letter, style: TextStyle(color: Colors.white, fontSize: compact ? 40 : 50, fontWeight: FontWeight.w900, height: 1.04)),
               Text(running ? 'Bu harfle başlayan kelimeleri bul!' : done ? 'Tur tamamlandı!' : 'Başla ve harfini keşfet!', style: const TextStyle(color: Colors.white, fontSize: 11)),
-              const SizedBox(height: 9),
+              const SizedBox(height: 5),
               ClipRRect(borderRadius: BorderRadius.circular(10), child: LinearProgressIndicator(value: seconds / 60, minHeight: 6, backgroundColor: Colors.white30, valueColor: const AlwaysStoppedAnimation<Color>(Colors.white))),
             ]),
           ),
-          const SizedBox(height: 12),
+          SizedBox(height: keyboard ? 5 : 10),
           Row(children: [
             const Expanded(child: Text('✍️ Cevap kartları', style: TextStyle(fontWeight: FontWeight.w800, color: Color(0xFF713C00)))),
             Text('$filled/6 tamamlandı', style: const TextStyle(fontSize: 11, color: Color(0xFF9A6A3B))),
           ]),
-          const SizedBox(height: 8),
-          Expanded(child: GridView.builder(
+          SizedBox(height: keyboard ? 4 : 7),
+          Expanded(child: LayoutBuilder(builder: (context, box) {
+            final availableCardHeight = (box.maxHeight - 12) / 3;
+            return GridView.builder(
             physics: const ClampingScrollPhysics(),
             itemCount: 6,
-            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(crossAxisCount: 2, mainAxisSpacing: 8, crossAxisSpacing: 8, childAspectRatio: 1.53),
-            itemBuilder: (_, i) => card(i),
-          )),
+            gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(crossAxisCount: 2, mainAxisSpacing: keyboard ? 5 : 7, crossAxisSpacing: 7, mainAxisExtent: keyboard ? (availableCardHeight < 63 ? 63 : availableCardHeight) : (availableCardHeight < 83 ? 83 : availableCardHeight)),
+            itemBuilder: (_, i) => card(i, keyboard: keyboard),
+          );
+          })),
           if(done) Padding(padding: const EdgeInsets.only(bottom: 6), child: Text('Tur puanı: +' + (marked.where((ok) => ok).length * 10).toString() + '  •  Harf kontrolü', style: const TextStyle(fontSize: 12, color: orange, fontWeight: FontWeight.bold))),
-          const SizedBox(height: 5),
+          SizedBox(height: keyboard ? 2 : 5),
           Row(children: [
             Expanded(child: FilledButton(
               onPressed: running ? null : () {if(done) setState(() => round++); begin();},
-              style: FilledButton.styleFrom(backgroundColor: orange, padding: const EdgeInsets.symmetric(vertical: 13)),
+              style: FilledButton.styleFrom(backgroundColor: orange, padding: EdgeInsets.symmetric(vertical: keyboard ? 9 : 13)),
               child: Text(done ? 'SONRAKİ TUR' : 'OYUNA BAŞLA'),
             )),
             const SizedBox(width: 8),
             Expanded(child: OutlinedButton(
               onPressed: running ? finish : null,
-              style: OutlinedButton.styleFrom(foregroundColor: orange, padding: const EdgeInsets.symmetric(vertical: 13)),
+              style: OutlinedButton.styleFrom(foregroundColor: orange, padding: EdgeInsets.symmetric(vertical: keyboard ? 9 : 13)),
               child: const Text('■ STOP!'),
             )),
           ]),
-          const SizedBox(height: 7),
+          SizedBox(height: keyboard ? 0 : 7),
         ]),
       )),
     );
