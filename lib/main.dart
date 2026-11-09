@@ -25,6 +25,102 @@ class _GamePageState extends State<GamePage> with WidgetsBindingObserver {
   bool running = false;
   bool done = false;
   List<bool> marked = List.filled(6, false);
+  List<String> players = ['Oyuncu 1'];
+  List<int> playerPoints = [0];
+  int playerIndex = 0;
+  bool get multiplayer => players.length > 1;
+
+  Future<void> configurePlayers() async {
+    if (running) return;
+    final names = List.generate(4, (i) => TextEditingController(
+      text: i < players.length ? players[i] : 'Oyuncu ${i + 1}',
+    ));
+    int count = players.length;
+    final choice = await showDialog<int>(
+      context: context,
+      builder: (dialogContext) => StatefulBuilder(builder: (dialogContext, refresh) =>
+        AlertDialog(
+          title: const Text('Oyuncu seçimi'),
+          content: SingleChildScrollView(child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Text('Aynı telefonda sırayla yarışın. Her oyuncuya 60 saniye verilir.', style: TextStyle(fontSize: 12)),
+              const SizedBox(height: 12),
+              DropdownButtonFormField<int>(
+                value: count,
+                decoration: const InputDecoration(labelText: 'Oyuncu sayısı'),
+                items: [1, 2, 3, 4].map((n) => DropdownMenuItem(value: n, child: Text('$n oyuncu'))).toList(),
+                onChanged: (n) { if (n != null) refresh(() => count = n); },
+              ),
+              const SizedBox(height: 10),
+              for (int i = 0; i < count; i++)
+                Padding(
+                  padding: const EdgeInsets.only(bottom: 6),
+                  child: TextField(controller: names[i], maxLength: 18, decoration: InputDecoration(
+                    labelText: 'Oyuncu ${i + 1}', counterText: '', isDense: true,
+                  )),
+                ),
+            ],
+          )),
+          actions: [
+            TextButton(onPressed: () => Navigator.pop(dialogContext), child: const Text('Vazgeç')),
+            FilledButton(onPressed: () => Navigator.pop(dialogContext, count), child: const Text('Başlat')),
+          ],
+        ),
+      ),
+    );
+    if (choice != null && mounted) {
+      countdown?.cancel();
+      FocusManager.instance.primaryFocus?.unfocus();
+      setState(() {
+        players = List.generate(choice, (i) => names[i].text.trim().isEmpty ? 'Oyuncu ${i + 1}' : names[i].text.trim());
+        playerPoints = List.filled(choice, 0);
+        playerIndex = 0;
+        round = 1;
+        letter = '?';
+        seconds = 60;
+        points = 0;
+        running = false;
+        done = false;
+        marked = List.filled(6, false);
+        for (final input in inputs) { input.clear(); }
+      });
+    }
+    for (final c in names) { c.dispose(); }
+  }
+
+  void nextTurn() {
+    if (running) return;
+    setState(() {
+      if (playerIndex + 1 < players.length) {
+        playerIndex++;
+      } else {
+        playerIndex = 0;
+        round++;
+        letter = '?';
+      }
+    });
+    begin();
+  }
+
+  void showStandings() {
+    showDialog<void>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Puan tablosu'),
+        content: Column(mainAxisSize: MainAxisSize.min, children: [
+          for (final i in List.generate(players.length, (i) => i)
+              ..sort((a, b) => playerPoints[b].compareTo(playerPoints[a])))
+            ListTile(
+              dense: true,
+              title: Text(players[i]),
+              trailing: Text('${playerPoints[i]} puan', style: const TextStyle(fontWeight: FontWeight.bold)),
+            ),
+        ]),
+        actions: [TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Kapat'))],
+      ),
+    );
+  }
 
   @override
   void initState() {
@@ -57,11 +153,12 @@ class _GamePageState extends State<GamePage> with WidgetsBindingObserver {
   void begin() {
     countdown?.cancel();
     final options = letters.where((item) => item != letter).toList();
-    final next = options[Random().nextInt(options.length)];
+    final next = playerIndex == 0 || letter == '?' ? options[Random().nextInt(options.length)] : letter;
     FocusManager.instance.primaryFocus?.unfocus();
     for (final input in inputs) { input.clear(); }
     setState(() {
       letter = next;
+      points = playerPoints[playerIndex];
       seconds = 60;
       running = true;
       done = false;
@@ -76,13 +173,15 @@ class _GamePageState extends State<GamePage> with WidgetsBindingObserver {
     FocusManager.instance.primaryFocus?.unfocus();
     setState(() {
       marked = inputs.map((c) => c.text.trim().isNotEmpty && c.text.trim().toUpperCase().startsWith(letter)).toList();
-      points += marked.where((ok) => ok).length * 10;
+      final earned = marked.where((ok) => ok).length * 10;
+      playerPoints[playerIndex] += earned;
+      points = playerPoints[playerIndex];
       running = false;
       done = true;
     });
   }
   Widget card(int index, {bool keyboard = false}) => Container(
-    padding: keyboard ? const EdgeInsets.fromLTRB(8, 4, 8, 2) : const EdgeInsets.fromLTRB(10, 7, 10, 4),
+    padding: keyboard ? const EdgeInsets.fromLTRB(8, 3, 8, 1) : const EdgeInsets.fromLTRB(9, 5, 9, 3),
     decoration: BoxDecoration(color: Colors.white, border: Border.all(color: const Color(0xFFFFD8AD)), borderRadius: BorderRadius.circular(15)),
     child: Column(crossAxisAlignment: CrossAxisAlignment.start, mainAxisAlignment: MainAxisAlignment.center, children: [
       Row(children: [
@@ -100,7 +199,7 @@ class _GamePageState extends State<GamePage> with WidgetsBindingObserver {
         textInputAction: index == 5 ? TextInputAction.done : TextInputAction.next,
         onSubmitted: (_) { if(index < 5) {nodes[index+1].requestFocus();} else {FocusManager.instance.primaryFocus?.unfocus();} },
         style: TextStyle(fontSize: keyboard ? 12 : 14),
-        decoration: const InputDecoration(isDense: true, hintText: 'Kelime yaz...', hintStyle: TextStyle(fontSize: 12), contentPadding: EdgeInsets.symmetric(vertical: 5), enabledBorder: UnderlineInputBorder(borderSide: BorderSide(color: Color(0xFFFFD8AD))), focusedBorder: UnderlineInputBorder(borderSide: BorderSide(color: orange))),
+        decoration: const InputDecoration(isDense: true, hintText: 'Kelime yaz...', hintStyle: TextStyle(fontSize: 12), contentPadding: EdgeInsets.symmetric(vertical: 3), enabledBorder: UnderlineInputBorder(borderSide: BorderSide(color: Color(0xFFFFD8AD))), focusedBorder: UnderlineInputBorder(borderSide: BorderSide(color: orange))),
       ),
     ]),
   );
@@ -134,7 +233,24 @@ class _GamePageState extends State<GamePage> with WidgetsBindingObserver {
             Expanded(child: Text('Harf Yarışı', style: TextStyle(fontSize: keyboard ? 18 : 21, fontWeight: FontWeight.w900, color: Color(0xFF713C00)))),
             Text('$round. TUR', style: const TextStyle(color: Color(0xFFB75D00), fontWeight: FontWeight.bold, fontSize: 12)),
           ]),
-          SizedBox(height: keyboard ? 5 : 9),
+          SizedBox(height: keyboard ? 3 : 6),
+          if (!keyboard) Row(children: [
+            Expanded(child: InkWell(
+              onTap: configurePlayers,
+              child: Padding(
+                padding: const EdgeInsets.symmetric(vertical: 3),
+                child: Row(children: [
+                  const Icon(Icons.groups_outlined, color: orange, size: 16),
+                  const SizedBox(width: 4),
+                  Flexible(child: Text(multiplayer ? players[playerIndex] : 'Tek oyuncu · Çoklu oyuncu seç', overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(color: Color(0xFF9C5100), fontSize: 12, fontWeight: FontWeight.bold))),
+                ]),
+              ),
+            )),
+            TextButton.icon(onPressed: showStandings, icon: const Icon(Icons.leaderboard, size: 16),
+              label: const Text('Puanlar'), style: TextButton.styleFrom(foregroundColor: orange, visualDensity: VisualDensity.compact)),
+          ]),
+          SizedBox(height: keyboard ? 3 : 5),
           if (keyboard) Container(
             width: double.infinity,
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
@@ -150,30 +266,30 @@ class _GamePageState extends State<GamePage> with WidgetsBindingObserver {
             ]),
           ) else Container(
             width: double.infinity,
-            padding: EdgeInsets.all(compact ? 9 : 12),
+            padding: EdgeInsets.all(compact ? 7 : 9),
             decoration: BoxDecoration(gradient: const LinearGradient(colors: [Color(0xFFFFAA4D), orange]), borderRadius: BorderRadius.circular(22)),
             child: Column(children: [
               Row(children: [stat('KALAN SÜRE', '$seconds', Icons.timer), const SizedBox(width: 8), stat('TOPLAM PUAN', '$points', Icons.emoji_events)]),
-              const SizedBox(height: 3),
+              const SizedBox(height: 1),
               const Text('BU TURUN HARFİ', style: TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.bold, letterSpacing: 1.5)),
-              Text(letter, style: TextStyle(color: Colors.white, fontSize: compact ? 40 : 50, fontWeight: FontWeight.w900, height: 1.04)),
+              Text(letter, style: TextStyle(color: Colors.white, fontSize: compact ? 32 : 38, fontWeight: FontWeight.w900, height: 1.04)),
               Text(running ? 'Bu harfle başlayan kelimeleri bul!' : done ? 'Tur tamamlandı!' : 'Başla ve harfini keşfet!', style: const TextStyle(color: Colors.white, fontSize: 11)),
-              const SizedBox(height: 5),
+              const SizedBox(height: 3),
               ClipRRect(borderRadius: BorderRadius.circular(10), child: LinearProgressIndicator(value: seconds / 60, minHeight: 6, backgroundColor: Colors.white30, valueColor: const AlwaysStoppedAnimation<Color>(Colors.white))),
             ]),
           ),
-          SizedBox(height: keyboard ? 5 : 10),
+          SizedBox(height: keyboard ? 3 : 7),
           Row(children: [
             const Expanded(child: Text('✍️ Cevap kartları', style: TextStyle(fontWeight: FontWeight.w800, color: Color(0xFF713C00)))),
             Text('$filled/6 tamamlandı', style: const TextStyle(fontSize: 11, color: Color(0xFF9A6A3B))),
           ]),
-          SizedBox(height: keyboard ? 4 : 7),
+          SizedBox(height: keyboard ? 3 : 5),
           Expanded(child: LayoutBuilder(builder: (context, box) {
             final availableCardHeight = (box.maxHeight - 12) / 3;
             return GridView.builder(
             physics: const ClampingScrollPhysics(),
             itemCount: 6,
-            gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(crossAxisCount: 2, mainAxisSpacing: keyboard ? 5 : 7, crossAxisSpacing: 7, mainAxisExtent: keyboard ? (availableCardHeight < 63 ? 63 : availableCardHeight) : (availableCardHeight < 83 ? 83 : availableCardHeight)),
+            gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(crossAxisCount: 2, mainAxisSpacing: keyboard ? 5 : 7, crossAxisSpacing: 7, mainAxisExtent: keyboard ? (availableCardHeight < 58 ? 58 : (availableCardHeight > 68 ? 68 : availableCardHeight)) : (availableCardHeight < 70 ? 70 : (availableCardHeight > 88 ? 88 : availableCardHeight))),
             itemBuilder: (_, i) => card(i, keyboard: keyboard),
           );
           })),
@@ -181,9 +297,9 @@ class _GamePageState extends State<GamePage> with WidgetsBindingObserver {
           SizedBox(height: keyboard ? 2 : 5),
           Row(children: [
             Expanded(child: FilledButton(
-              onPressed: running ? null : () {if(done) setState(() => round++); begin();},
+              onPressed: running ? null : () {if(done) { nextTurn(); } else { begin(); }},
               style: FilledButton.styleFrom(backgroundColor: orange, padding: EdgeInsets.symmetric(vertical: keyboard ? 9 : 13)),
-              child: Text(done ? 'SONRAKİ TUR' : 'OYUNA BAŞLA'),
+              child: Text(done ? (multiplayer && playerIndex < players.length - 1 ? 'SIRADAKİ OYUNCU' : 'SONRAKİ TUR') : 'OYUNA BAŞLA', style: const TextStyle(fontSize: 12)),
             )),
             const SizedBox(width: 8),
             Expanded(child: OutlinedButton(
