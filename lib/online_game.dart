@@ -170,8 +170,8 @@ class _OnlineGamePageState extends State<OnlineGamePage> {
                   decoration: BoxDecoration(color: orange, borderRadius: BorderRadius.circular(15)),
                   child: Row(children: [
                     Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                      Text('ODA KODU: \${room!['code']}', style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 17)),
-                      Text('Tur: \${room!['round']} • Harf: \${room!['letter']}', style: const TextStyle(color: Colors.white)),
+                      Text('ODA KODU: ${room!['code']}', style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 17)),
+                      Text('Tur: ${room!['round']} • Harf: ${room!['letter']}', style: const TextStyle(color: Colors.white)),
                     ])),
                     if (playing) Text('$seconds sn', style: const TextStyle(color: Colors.white, fontSize: 23, fontWeight: FontWeight.bold)),
                   ]),
@@ -183,7 +183,7 @@ class _OnlineGamePageState extends State<OnlineGamePage> {
                       decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(12), border: Border.all(color: const Color(0xFFFFD4A0))),
                       child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
                         Text(player['display_name'].toString(), overflow: TextOverflow.ellipsis, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
-                        Text('\${player['score']} puan', style: const TextStyle(fontSize: 11, color: orange)),
+                        Text('${player['score']} puan', style: const TextStyle(fontSize: 11, color: orange)),
                       ]),
                     ),
                 ])),
