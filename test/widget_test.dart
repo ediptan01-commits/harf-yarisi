@@ -10,6 +10,14 @@ void main() {
     expect(WordCheck.check('Şehir', 'İ', 'İzmir'), isTrue);
     expect(WordCheck.check('Ülke', 'K', 'Kedi'), isFalse);
     expect(WordCheck.check('İsim', 'Ç', 'Çağla'), isTrue);
+    expect(WordCheck.check('İsim', 'B', 'Betül'), isTrue);
+    expect(WordCheck.check('Şehir', 'B', 'Bursa'), isTrue);
+    expect(WordCheck.check('Bitki', 'B', 'Brokoli'), isTrue);
+    expect(WordCheck.check('Eşya', 'B', 'Battaniye'), isTrue);
+    expect(WordCheck.check('Ülke', 'B', 'Bolivya'), isTrue);
+    expect(WordCheck.check('Hayvan', 'B', 'Blık'), isFalse);
+    expect(WordCheck.check('Hayvan', 'B', 'Balık'), isTrue);
+    expect(WordCheck.check('Hayvan', 'B', 'Battaniye'), isFalse);
   });
   testWidgets('Harf Yarışı açılır ve tur başlatılır', (tester) async {
     await tester.binding.setSurfaceSize(const Size(390, 844));
