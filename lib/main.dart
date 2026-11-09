@@ -247,6 +247,19 @@ class _GamePageState extends State<GamePage> with WidgetsBindingObserver {
             Expanded(child: Text('Harf Yarışı', style: TextStyle(fontSize: keyboard ? 18 : 21, fontWeight: FontWeight.w900, color: Color(0xFF713C00)))),
             Text('$round. TUR', style: const TextStyle(color: Color(0xFFB75D00), fontWeight: FontWeight.bold, fontSize: 12)),
             if (!keyboard) IconButton(
+              tooltip: 'Sözlük kaynağı',
+              onPressed: () => showAboutDialog(
+                context: context,
+                applicationName: 'Harf Yarışı',
+                children: const [
+                  Text('Türkçe kategori sözlükleri: Pulmaca Açık Veri (Vikisözlük kökenli), CC BY-SA 4.0.'),
+                  Text('Kaynak: https://pulmaca.com.tr/veri/'),
+                  Text('Kelime listeleri resmî TDK onaylı değildir.'),
+                ],
+              ),
+              icon: const Icon(Icons.info_outline, color: orange, size: 19),
+            ),
+            if (!keyboard) IconButton(
               tooltip: 'Çevrim içi oyun',
               onPressed: () {
                 if (running) return;
