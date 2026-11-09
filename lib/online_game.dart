@@ -3,8 +3,8 @@ import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'word_check.dart';
 
-const onlineUrl = String.fromEnvironment('SUPABASE_URL');
-const onlineKey = String.fromEnvironment('SUPABASE_PUBLISHABLE_KEY');
+const onlineUrl = String.fromEnvironment('SUPABASE_URL', defaultValue: 'https://dmnhwypfbjlptucfxyky.supabase.co');
+const onlineKey = String.fromEnvironment('SUPABASE_PUBLISHABLE_KEY', defaultValue: 'sb_publishable_Iepy41pyZuvfldCXhT9V6Q_NVTSVsCk');
 bool get onlineReady => onlineUrl.isNotEmpty && onlineKey.isNotEmpty;
 
 class OnlineGamePage extends StatefulWidget {
