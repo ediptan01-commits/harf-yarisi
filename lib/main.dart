@@ -7,6 +7,11 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  try {
+    await WordCheck.loadBundled();
+  } catch (_) {
+    // Fall back to the built-in starter dictionary if assets are unavailable.
+  }
   if (onlineReady) {
     await Supabase.initialize(url: onlineUrl, publishableKey: onlineKey);
   }
