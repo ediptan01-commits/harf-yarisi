@@ -1,4 +1,34 @@
+import 'package:flutter/services.dart';
+
 class WordCheck {
+  // Bundled, category-specific vocabulary (CC BY-SA 4.0).
+  static final Map<String, Set<String>> _bundled = {};
+  static bool get dictionaryLoaded => _bundled.length == 6;
+  static int get bundledCount => _bundled.values.fold(0, (sum, words) => sum + words.length);
+
+  static Future<void> loadBundled() async {
+    const files = <String, String>{
+      'İsim': 'isim',
+      'Şehir': 'sehir',
+      'Hayvan': 'hayvan',
+      'Bitki': 'bitki',
+      'Eşya': 'esya',
+      'Ülke': 'ulke',
+    };
+    final temp = <String, Set<String>>{};
+    for (final entry in files.entries) {
+      final text = await rootBundle.loadString('assets/dictionary/${entry.value}.txt');
+      final words = text.split(RegExp(r'\r?\n'))
+          .map(normalize)
+          .where((word) => word.isNotEmpty)
+          .toSet();
+      if (words.isEmpty) throw StateError('Sözlük boş: ${entry.key}');
+      temp[entry.key] = words;
+    }
+    _bundled
+      ..clear()
+      ..addAll(temp);
+  }
   static const entries = <String, List<String>>{
     'İsim': ['Ahmet','Ali','Ayşe','Aslı','Burak','Buse','Can','Cem','Cansu','Çağla','Çetin','Çiğdem','Deniz','Derya','Davut','Elif','Emre','Ece','Fatma','Ferhat','Fırat','Gamze','Gökhan','Gül','Hasan','Hilal','Hakan','İbrahim','İrem','İpek','Kemal','Kerem','Kübra','Leyla','Levent','Lale','Mert','Murat','Melek','Naz','Nihat','Nehir','Onur','Okan','Oya','Pelin','Pınar','Polat','Rana','Recep','Rıza','Selin','Seda','Serkan','Tuğba','Tolga','Tuna','Umut','Ufuk','Uğur','Yusuf','Yağmur','Yasemin','Zeynep','Zafer','Zehra'],
     'Şehir': ['Ankara','Adana','Antalya','Aydın','Artvin','Amasya','Bursa','Bolu','Balıkesir','Bartın','Bilecik','Ceyhan','Cizre','Çorum','Çanakkale','Çankırı','Denizli','Diyarbakır','Düzce','Edirne','Erzurum','Eskişehir','Elazığ','Erzincan','Fatsa','Floransa','Frankfurt','Gaziantep','Giresun','Gümüşhane','Hatay','Hakkari','Hamburg','İstanbul','İzmir','İzmit','Konya','Kayseri','Kars','Kocaeli','Kırşehir','Londra','Lizbon','Lüleburgaz','Manisa','Mardin','Muğla','Mersin','Nevşehir','Niğde','New York','Ordu','Oslo','Ottawa','Paris','Prag','Polatlı','Rize','Roma','Rotterdam','Samsun','Sinop','Sivas','Sakarya','Trabzon','Tokat','Tekirdağ','Uşak','Urfa','Utrecht','Yalova','Yozgat','Yüksekova','Zonguldak','Zürih','Zara'],
@@ -27,6 +57,7 @@ class WordCheck {
   static bool check(String category, String letter, String answer) {
     final normalized = normalize(answer);
     if (normalized.isEmpty || !normalized.startsWith(normalize(letter))) return false;
+    if (_bundled[category]?.contains(normalized) ?? false) return true;
     return [...(entries[category] ?? const <String>[]), ...(expandedEntries[category] ?? const <String>[])]
         .any((word) => normalize(word) == normalized);
   }
