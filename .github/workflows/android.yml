@@ -28,10 +28,22 @@ jobs:
         run: |
           grep -q 'dmnhwypfbjlptucfxyky.supabase.co' lib/online_game.dart
           grep -q 'sb_publishable_' lib/online_game.dart
-      - name: Build APK
-        run: flutter build apk --release
-      - name: Build AAB
-        run: flutter build appbundle --release
+      - name: Build APK (retry on transient network errors)
+        run: |
+          for attempt in 1 2 3 4; do
+            if flutter build apk --release; then break; fi
+            if [ "$attempt" = "4" ]; then echo "APK build failed"; exit 1; fi
+            echo "Retrying APK build after a network timeout..."
+            sleep 20
+          done
+      - name: Build AAB (retry on transient network errors)
+        run: |
+          for attempt in 1 2 3 4; do
+            if flutter build appbundle --release; then break; fi
+            if [ "$attempt" = "4" ]; then echo "AAB build failed"; exit 1; fi
+            echo "Retrying AAB build after a network timeout..."
+            sleep 20
+          done
       - uses: actions/upload-artifact@v4
         with:
           name: Harf-Yarisi-APK
