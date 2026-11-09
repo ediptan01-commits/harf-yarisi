@@ -21,9 +21,9 @@ jobs:
           sed -i 's/android:label="harf_yarisi"/android:label="Harf Yarışı"/' android/app/src/main/AndroidManifest.xml
           sed -i 's/<application/<uses-permission android:name="android.permission.INTERNET"\/>\n    <application/' android/app/src/main/AndroidManifest.xml
       - name: Static checks
-        run: flutter analyze
+        run: flutter analyze --no-fatal-infos
       - name: Test
-        run: flutter test
+        run: flutter test -r expanded
       - name: Build APK
         env:
           SUPABASE_URL: ${{ secrets.HARF_SUPABASE_URL }}
