@@ -19,12 +19,21 @@ jobs:
           flutter create --platforms=android --org com.teknolojix .
           flutter pub get
           sed -i 's/android:label="harf_yarisi"/android:label="Harf Yarışı"/' android/app/src/main/AndroidManifest.xml
+          sed -i 's/<application/<uses-permission android:name="android.permission.INTERNET"\/>\n    <application/' android/app/src/main/AndroidManifest.xml
+      - name: Static checks
+        run: flutter analyze
       - name: Test
         run: flutter test
       - name: Build APK
-        run: flutter build apk --release
+        env:
+          SUPABASE_URL: ${{ secrets.HARF_SUPABASE_URL }}
+          SUPABASE_PUBLISHABLE_KEY: ${{ secrets.HARF_SUPABASE_PUBLISHABLE_KEY }}
+        run: flutter build apk --release --dart-define=SUPABASE_URL="$SUPABASE_URL" --dart-define=SUPABASE_PUBLISHABLE_KEY="$SUPABASE_PUBLISHABLE_KEY"
       - name: Build AAB
-        run: flutter build appbundle --release
+        env:
+          SUPABASE_URL: ${{ secrets.HARF_SUPABASE_URL }}
+          SUPABASE_PUBLISHABLE_KEY: ${{ secrets.HARF_SUPABASE_PUBLISHABLE_KEY }}
+        run: flutter build appbundle --release --dart-define=SUPABASE_URL="$SUPABASE_URL" --dart-define=SUPABASE_PUBLISHABLE_KEY="$SUPABASE_PUBLISHABLE_KEY"
       - uses: actions/upload-artifact@v4
         with:
           name: Harf-Yarisi-APK
