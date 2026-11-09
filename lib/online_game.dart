@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'word_check.dart';
 
@@ -15,7 +16,8 @@ class OnlineGamePage extends StatefulWidget {
 
 class _OnlineGamePageState extends State<OnlineGamePage> {
   static const orange = Color(0xFFF57C00);
-  static const categories = ['İsim','Şehir','Hayvan','Bitki','Eşya','Ülke'];
+  static const baseCategories = ['İsim','Şehir','Hayvan','Bitki','Eşya','Ülke'];
+  List<String> get categories => (room?['round_categories'] as List?)?.map((e) => e.toString()).toList() ?? baseCategories;
   final name = TextEditingController(text: 'Oyuncu');
   final code = TextEditingController();
   final answers = List.generate(6, (_) => TextEditingController());
@@ -23,6 +25,21 @@ class _OnlineGamePageState extends State<OnlineGamePage> {
   Map<String, dynamic>? room;
   List<Map<String, dynamic>> players = [];
   bool loading = false, refreshing = false, submitted = false;
+  String matchMode = 'duel';
+  int matchRounds = 3;
+  int chosenCategory = 0;
+  bool usedHint = false, usedDouble = false, usedExtra = false;
+  String? hintText;
+  String? doubleCategory;
+  List<Map<String,dynamic>> results = [];
+  int speedBonus = 0;
+  String get status => room?['status']?.toString() ?? 'lobby';
+  bool get finished => status == 'finished';
+  int get currentGameRound => (room?['round'] as num?)?.toInt() ?? 0;
+  int get maxRounds => (room?['match_rounds'] as num?)?.toInt() ?? 3;
+  bool get isDuel => room?['mode'] == 'duel';
+  bool get isMyTurnDone => players.any((p)=>p['user_id']==db.auth.currentUser?.id && (p['submitted_round'] as num? ?? 0) >= currentGameRound && currentGameRound>0);
+  bool get allPlayersDone => players.length >= 2 && players.every((p)=>(p['submitted_round'] as num? ?? 0) >= currentGameRound);
   int submittedPoints = 0, currentRound = -1;
   String? error;
 
@@ -33,9 +50,16 @@ class _OnlineGamePageState extends State<OnlineGamePage> {
   int get seconds {
     final started = DateTime.tryParse(room?['started_at']?.toString() ?? '');
     if (started == null) return 60;
-    final ms = started.add(const Duration(seconds: 60)).difference(DateTime.now()).inMilliseconds;
-    return (ms / 1000).ceil().clamp(0, 60).toInt();
+    final me = players.where((p)=>p['user_id']==db.auth.currentUser?.id);
+    final bonus = me.isNotEmpty && me.first['extra_round']==currentGameRound ? 10 : 0;
+    final remaining = started.add(Duration(seconds: 60+bonus)).difference(DateTime.now()).inMilliseconds;
+    return (remaining / 1000).ceil().clamp(0, 70).toInt();
   }
+  int get wheelSeconds {
+    final start=DateTime.tryParse(room?['started_at']?.toString() ?? '');
+    return start == null ? 0 : ((start.difference(DateTime.now()).inMilliseconds)/1000).ceil().clamp(0,3).toInt();
+  }
+  bool get activeInput => playing && !submitted && !isMyTurnDone && wheelSeconds==0 && seconds>0;
 
   @override
   void initState() {
@@ -53,7 +77,7 @@ class _OnlineGamePageState extends State<OnlineGamePage> {
 
   Future<void> _create() async {
     await _run(() async {
-      final result = await db.rpc('harf_create_room', params: {'p_name': name.text.trim()});
+      final result = await db.rpc('harf_create_room', params: {'p_name': name.text.trim(), 'p_mode': matchMode, 'p_match_rounds': matchRounds});
       await _enter(Map<String, dynamic>.from(result as Map));
     });
   }
@@ -97,13 +121,20 @@ class _OnlineGamePageState extends State<OnlineGamePage> {
         currentRound = nextRound;
         submitted = false;
         submittedPoints = 0;
+        speedBonus = 0;
+        results = [];
+        hintText = null;
+        doubleCategory = null;
+        chosenCategory = 0;
+        usedHint = usedDouble = usedExtra = false;
         for (final c in answers) { c.clear(); }
       }
       setState(() {
         room = Map<String,dynamic>.from(r);
         players = (p as List).map((e) => Map<String,dynamic>.from(e as Map)).toList();
+        if (isMyTurnDone) submitted = true;
       });
-      if (playing && seconds == 0 && !submitted) await _submit();
+      if (playing && seconds == 0 && !submitted && !isMyTurnDone) await _submit();
     } catch (e) {
       if (mounted) setState(() => error = 'Bağlantı: $e');
     } finally {
@@ -116,13 +147,48 @@ class _OnlineGamePageState extends State<OnlineGamePage> {
     await _refresh();
   });
 
+  Future<void> _useJoker(String kind) => _run(() async {
+    final r = await db.rpc('harf_use_joker', params: {
+      'p_room':roomId, 'p_kind':kind, 'p_category':chosenCategory+1,
+    });
+    final data=Map<String,dynamic>.from(r as Map);
+    if (!mounted) return;
+    setState(() {
+      if (kind=='hint') { usedHint=true; hintText=data['clue']?.toString(); }
+      if (kind=='double') { usedDouble=true; doubleCategory=data['category']?.toString(); }
+      if (kind=='extra') { usedExtra=true; }
+    });
+    await _refresh();
+  });
+
+  Future<void> _appeal(String category) => _run(() async {
+    await db.rpc('harf_appeal',params:{
+      'p_room':roomId,'p_round':currentGameRound,'p_category':category,
+    });
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content:Text('İtirazın inceleme listesine alındı. Puan otomatik eklenmez.')),
+    );
+    await _refresh();
+  });
+
+  Future<void> _shareRoomCode() async {
+    await Clipboard.setData(ClipboardData(text:'Harf Yarışı oda kodum: ${room?['code']}'));
+    if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content:Text('Oda kodu kopyalandı')));
+  }
+
   Future<void> _submit() async {
     if (submitted || !playing || loading) return;
     final payload = List.generate(6, (i) => WordCheck.normalize(answers[i].text));
     setState(() { submitted = true; loading = true; error = null; });
     try {
       final response = await db.rpc('harf_submit', params: {'p_room': roomId, 'p_answers': payload});
-      if (mounted) setState(() => submittedPoints = (response as num).toInt());
+      if (mounted) setState(() {
+        final data=Map<String,dynamic>.from(response as Map);
+        submittedPoints=(data['points'] as num?)?.toInt() ?? 0;
+        speedBonus=(data['bonus'] as num?)?.toInt() ?? 0;
+        results=(data['results'] as List? ?? []).map((x)=>Map<String,dynamic>.from(x as Map)).toList();
+      });
       await _refresh();
     } catch (e) {
       if (mounted) setState(() { error = 'Cevap gönderilemedi: $e'; submitted = false; });
