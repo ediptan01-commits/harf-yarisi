@@ -40,6 +40,17 @@ class _OnlineGamePageState extends State<OnlineGamePage> {
   bool get isDuel => room?['mode'] == 'duel';
   bool get isMyTurnDone => players.any((p)=>p['user_id']==db.auth.currentUser?.id && (p['submitted_round'] as num? ?? 0) >= currentGameRound && currentGameRound>0);
   bool get allPlayersDone => players.length >= 2 && players.every((p)=>(p['submitted_round'] as num? ?? 0) >= currentGameRound);
+  bool get roundComplete {
+    if(!playing || wheelSeconds>0) return false;
+    if(allPlayersDone) return true;
+    final started=DateTime.tryParse(room?['started_at']?.toString() ?? '');
+    if(started==null || players.length<2) return false;
+    return players.every((p) {
+      if((p['submitted_round'] as num? ?? 0)>=currentGameRound) return true;
+      final bonus=(p['extra_round'] as num? ?? 0)==currentGameRound ? 10 : 0;
+      return !DateTime.now().isBefore(started.add(Duration(seconds:60+bonus)));
+    });
+  }
   int submittedPoints = 0, currentRound = -1;
   String? error;
 
@@ -326,8 +337,9 @@ class _OnlineGamePageState extends State<OnlineGamePage> {
                   if(activeInput) FilledButton(onPressed: loading ? null : _submit,
                     style: FilledButton.styleFrom(backgroundColor: orange, minimumSize: const Size(double.infinity, 44)),
                     child: const Text('STOP! — GÖNDER')),
-                  if ((seconds == 0 || allPlayersDone) && isHost) OutlinedButton(onPressed:loading?null:_startRound,child:Text(currentGameRound>=maxRounds?'MAÇI BİTİR':'SONRAKİ TUR')),
-                  if ((seconds == 0 || allPlayersDone) && !isHost) const Text('Oda sahibi sonraki turu başlatabilir.'),
+                  if(seconds==0 && !roundComplete) const Text('Diğer oyuncunun ek süresi devam ediyor.',style:TextStyle(fontSize:11,color:orange)),
+                  if (roundComplete && isHost) OutlinedButton(onPressed:loading?null:_startRound,child:Text(currentGameRound>=maxRounds?'MAÇI BİTİR':'SONRAKİ TUR')),
+                  if (roundComplete && !isHost) const Text('Oda sahibi sonraki turu başlatabilir.'),
                 ],
               ],
             ]),
