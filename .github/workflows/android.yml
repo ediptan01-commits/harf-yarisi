@@ -24,16 +24,14 @@ jobs:
         run: flutter analyze --no-fatal-infos
       - name: Test
         run: flutter test -r expanded
+      - name: Verify Supabase configuration
+        run: |
+          grep -q 'dmnhwypfbjlptucfxyky.supabase.co' lib/online_game.dart
+          grep -q 'sb_publishable_' lib/online_game.dart
       - name: Build APK
-        env:
-          SUPABASE_URL: ${{ secrets.HARF_SUPABASE_URL }}
-          SUPABASE_PUBLISHABLE_KEY: ${{ secrets.HARF_SUPABASE_PUBLISHABLE_KEY }}
-        run: flutter build apk --release --dart-define=SUPABASE_URL="$SUPABASE_URL" --dart-define=SUPABASE_PUBLISHABLE_KEY="$SUPABASE_PUBLISHABLE_KEY"
+        run: flutter build apk --release
       - name: Build AAB
-        env:
-          SUPABASE_URL: ${{ secrets.HARF_SUPABASE_URL }}
-          SUPABASE_PUBLISHABLE_KEY: ${{ secrets.HARF_SUPABASE_PUBLISHABLE_KEY }}
-        run: flutter build appbundle --release --dart-define=SUPABASE_URL="$SUPABASE_URL" --dart-define=SUPABASE_PUBLISHABLE_KEY="$SUPABASE_PUBLISHABLE_KEY"
+        run: flutter build appbundle --release
       - uses: actions/upload-artifact@v4
         with:
           name: Harf-Yarisi-APK
