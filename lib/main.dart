@@ -2,8 +2,16 @@ import 'dart:async';
 import 'dart:math';
 import 'package:flutter/material.dart';
 import 'word_check.dart';
+import 'online_game.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
-void main() => runApp(const MaterialApp(debugShowCheckedModeBanner: false, home: GamePage()));
+Future<void> main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  if (onlineReady) {
+    await Supabase.initialize(url: onlineUrl, publishableKey: onlineKey);
+  }
+  runApp(const MaterialApp(debugShowCheckedModeBanner: false, home: GamePage()));
+}
 
 class GamePage extends StatefulWidget {
   const GamePage({super.key});
@@ -233,6 +241,14 @@ class _GamePageState extends State<GamePage> with WidgetsBindingObserver {
             const SizedBox(width: 9),
             Expanded(child: Text('Harf Yarışı', style: TextStyle(fontSize: keyboard ? 18 : 21, fontWeight: FontWeight.w900, color: Color(0xFF713C00)))),
             Text('$round. TUR', style: const TextStyle(color: Color(0xFFB75D00), fontWeight: FontWeight.bold, fontSize: 12)),
+            if (!keyboard) IconButton(
+              tooltip: 'Çevrim içi oyun',
+              onPressed: () {
+                if (running) return;
+                Navigator.push(context, MaterialPageRoute(builder: (_) => const OnlineGamePage()));
+              },
+              icon: const Icon(Icons.wifi, color: orange, size: 21),
+            ),
           ]),
           SizedBox(height: keyboard ? 3 : 6),
           if (!keyboard) Row(children: [
