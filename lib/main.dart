@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:math';
 import 'package:flutter/material.dart';
+import 'word_check.dart';
 
 void main() => runApp(const MaterialApp(debugShowCheckedModeBanner: false, home: GamePage()));
 
@@ -172,7 +173,7 @@ class _GamePageState extends State<GamePage> with WidgetsBindingObserver {
     countdown?.cancel();
     FocusManager.instance.primaryFocus?.unfocus();
     setState(() {
-      marked = inputs.map((c) => c.text.trim().isNotEmpty && c.text.trim().toUpperCase().startsWith(letter)).toList();
+      marked = List.generate(6, (i) => WordCheck.check(categories[i], letter, inputs[i].text));
       final earned = marked.where((ok) => ok).length * 10;
       playerPoints[playerIndex] += earned;
       points = playerPoints[playerIndex];
@@ -293,7 +294,7 @@ class _GamePageState extends State<GamePage> with WidgetsBindingObserver {
             itemBuilder: (_, i) => card(i, keyboard: keyboard),
           );
           })),
-          if(done) Padding(padding: const EdgeInsets.only(bottom: 6), child: Text('Tur puanı: +' + (marked.where((ok) => ok).length * 10).toString() + '  •  Harf kontrolü', style: const TextStyle(fontSize: 12, color: orange, fontWeight: FontWeight.bold))),
+          if(done) Padding(padding: const EdgeInsets.only(bottom: 6), child: Text('Tur puanı: +' + (marked.where((ok) => ok).length * 10).toString() + '  •  Kategori sözlüğü kontrolü', style: const TextStyle(fontSize: 12, color: orange, fontWeight: FontWeight.bold))),
           SizedBox(height: keyboard ? 2 : 5),
           Row(children: [
             Expanded(child: FilledButton(
