@@ -56,7 +56,7 @@ class _GamePageState extends State<GamePage> with WidgetsBindingObserver {
               const Text('Aynı telefonda sırayla yarışın. Her oyuncuya 60 saniye verilir.', style: TextStyle(fontSize: 12)),
               const SizedBox(height: 12),
               DropdownButtonFormField<int>(
-                value: count,
+                initialValue: count,
                 decoration: const InputDecoration(labelText: 'Oyuncu sayısı'),
                 items: [1, 2, 3, 4].map((n) => DropdownMenuItem(value: n, child: Text('$n oyuncu'))).toList(),
                 onChanged: (n) { if (n != null) refresh(() => count = n); },
