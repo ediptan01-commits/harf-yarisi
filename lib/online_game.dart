@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'word_check.dart';
+import 'harf_wheel.dart';
 
 const onlineUrl = String.fromEnvironment('SUPABASE_URL', defaultValue: 'https://dmnhwypfbjlptucfxyky.supabase.co');
 const onlineKey = String.fromEnvironment('SUPABASE_PUBLISHABLE_KEY', defaultValue: 'sb_publishable_Iepy41pyZuvfldCXhT9V6Q_NVTSVsCk');
@@ -239,7 +240,11 @@ class _OnlineGamePageState extends State<OnlineGamePage> {
               if (room == null) ...[
                 const SizedBox(height: 18),
                 const Text('Arkadaşlarınla aynı anda yarış', style: TextStyle(fontSize: 19, fontWeight: FontWeight.w900)),
-                const SizedBox(height: 18),
+                const SizedBox(height: 7),
+                const HarfWheel(size: 116),
+                const Text('Harf çarkı • Maç başlayınca otomatik döner',
+                  style: TextStyle(fontSize: 11, color: orange)),
+                const SizedBox(height: 12),
                 TextField(controller: name, maxLength: 18, decoration: const InputDecoration(labelText: 'Oyuncu adın', border: OutlineInputBorder())),
                 const SizedBox(height: 8),
                 const Text('MAÇ MODU',style:TextStyle(color:orange,fontWeight:FontWeight.bold)),
@@ -301,11 +306,7 @@ class _OnlineGamePageState extends State<OnlineGamePage> {
                   if (isHost) FilledButton(onPressed: loading ? null : _startRound, child: const Text('TURU BAŞLAT')),
                 ] else if(wheelSeconds>0) ...[
                   Expanded(child:Center(child:Column(mainAxisSize:MainAxisSize.min,children:[
-                    TweenAnimationBuilder<double>(key:ValueKey(currentGameRound),
-                      tween:Tween(begin:0,end:6.0),duration:const Duration(seconds:3),
-                      builder:(context,v,child)=>Transform.rotate(angle:v,child:child),
-                      child:CircleAvatar(radius:50,backgroundColor:orange,
-                        child:const Text('?',style:TextStyle(fontSize:50,color:Colors.white)))),
+                    HarfWheel(key:ValueKey('wheel-$currentGameRound'),spinning:true,size:220),
                     const SizedBox(height:12),
                     const Text('HARF ÇARKI DÖNÜYOR!',style:TextStyle(color:orange,fontWeight:FontWeight.bold)),
                   ]))),
