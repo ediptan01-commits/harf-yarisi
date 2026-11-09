@@ -12,16 +12,13 @@ Flutter ile geliştirilen beyaz-turuncu İsim–Şehir–Hayvan–Bitki–Eşya�
 
 ## Çevrim içi sunucunun etkinleştirilmesi
 
-> **Önemli:** Çevrim içi ekran kodu hazırdır ancak sunucu bilgileri girilmeden oda oluşturma çalışmaz. Veritabanını yanlışlıkla başka bir uygulamanın projesine yüklemeyin.
+> **Güncel durum:** Harf Yarışı için ayrı Supabase projesi oluşturuldu: `dmnhwypfbjlptucfxyky` (eu-central-1). Sunucu tabloları ve 400 kelimelik sözlük kuruldu. Uygulamanın yayınlanabilir anahtarı kaynak kodda varsayılan yapılandırma olarak bulunur. **Authentication > Providers > Anonymous Sign-Ins** ayarı panelden mutlaka etkinleştirilmelidir.
 
-1. Harf Yarışı için bir Supabase projesi seçin veya oluşturun.
-2. Supabase Auth > Providers bölümünden **Anonymous Sign-Ins** özelliğini etkinleştirin.
-3. SQL Editor'da `supabase/harf_online_setup.sql` içeriğini çalıştırın.
-4. GitHub deposunun **Settings > Secrets and variables > Actions** bölümüne iki repository secret ekleyin:
-   - `HARF_SUPABASE_URL`: proje URL'si
-   - `HARF_SUPABASE_PUBLISHABLE_KEY`: publishable/anon anahtarı (service_role **değil**)
-5. GitHub Actions > Android APK AAB > **Run workflow** ile yeni bir APK/AAB üretin.
-6. İki cihazda uygulamayı açarak oda oluşturma, kodla katılma ve 60 saniyelik turu test edin.
+1. [Harf Yarışı Supabase projesini](https://supabase.com/dashboard/project/dmnhwypfbjlptucfxyky) açın.
+2. **Authentication > Providers > Anonymous Sign-Ins** özelliğini etkinleştirin. Bu ayar olmadan oda oluşturma çalışmaz.
+3. SQL veritabanı kurulumu zaten yapıldı. Tekrar çalıştırmak gerekmiyor.
+4. GitHub Actions > Android APK AAB üzerinden son derlemeyi kontrol edin; varsayılan URL ve publishable key kodda bulunuyor. İstenirse `HARF_SUPABASE_URL` ve `HARF_SUPABASE_PUBLISHABLE_KEY` Actions secrets ile değiştirilebilir.
+5. İki gerçek Android cihazda oda oluşturma, kodla katılma ve tur puanlamasını test edin.
 
 Sunucu tek turda aynı harfi tüm oyunculara verir, cevapları veritabanındaki kategori sözlüğüne göre doğrular. Kelime listesi başlangıç sürümünde **400 sözcük** içerir; henüz kapsamlı Türkçe sözlük değildir.
 
