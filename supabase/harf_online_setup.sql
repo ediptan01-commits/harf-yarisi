@@ -504,6 +504,9 @@ declare v_room public.harf_rooms%rowtype; v_letter text;
 begin
   select * into v_room from public.harf_rooms where id=p_room for update;
   if not found or v_room.owner_id is distinct from auth.uid() then raise exception 'Yalnızca oda sahibi başlatabilir'; end if;
+  if (select count(*) from public.harf_players where room_id=p_room) < 2 then
+    raise exception 'Oyun için en az 2 oyuncu gerekli';
+  end if;
   if v_room.status='playing' and now() < v_room.started_at + interval '60 seconds' then
     raise exception 'Tur henüz bitmedi';
   end if;
