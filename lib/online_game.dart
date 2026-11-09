@@ -34,7 +34,7 @@ class _OnlineGamePageState extends State<OnlineGamePage> {
     final started = DateTime.tryParse(room?['started_at']?.toString() ?? '');
     if (started == null) return 60;
     final ms = started.add(const Duration(seconds: 60)).difference(DateTime.now()).inMilliseconds;
-    return (ms / 1000).ceil().clamp(0, 60);
+    return (ms / 1000).ceil().clamp(0, 60).toInt();
   }
 
   @override
