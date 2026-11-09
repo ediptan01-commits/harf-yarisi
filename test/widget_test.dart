@@ -4,6 +4,7 @@ import 'package:harf_yarisi/main.dart';
 import 'package:harf_yarisi/word_check.dart';
 
 void main() {
+  TestWidgetsFlutterBinding.ensureInitialized();
   test('Kategori kontrolü yanlış hayvan cevabını reddeder', () async {
     await WordCheck.loadBundled();
     expect(WordCheck.dictionaryLoaded, isTrue);
