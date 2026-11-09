@@ -133,6 +133,12 @@ class _OnlineGamePageState extends State<OnlineGamePage> {
         room = Map<String,dynamic>.from(r);
         players = (p as List).map((e) => Map<String,dynamic>.from(e as Map)).toList();
         if (isMyTurnDone) submitted = true;
+        final mine=players.where((p)=>p['user_id']==db.auth.currentUser?.id);
+        if(mine.isNotEmpty){
+          usedHint=mine.first['used_hint']==true;
+          usedDouble=mine.first['used_double']==true;
+          usedExtra=mine.first['used_extra']==true;
+        }
       });
       if (playing && seconds == 0 && !submitted && !isMyTurnDone) await _submit();
     } catch (e) {
@@ -255,7 +261,7 @@ class _OnlineGamePageState extends State<OnlineGamePage> {
                     Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                       Text('ODA KODU: ${room!['code']}', style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 17)),
                       Text('Tur: ${room!['round']} / $maxRounds • ${isDuel?'Düello':'Arkadaş'}',style:const TextStyle(color:Colors.white)),
-                      if(playing) Text('Harf: ${room!['letter']}',style:const TextStyle(color:Colors.white,fontWeight:FontWeight.bold)),
+                      if(playing && wheelSeconds==0) Text('Harf: ${room!['letter']}',style:const TextStyle(color:Colors.white,fontWeight:FontWeight.bold)),
                     ])),
                     if (playing) Column(children:[Text('$seconds sn',style:TextStyle(color:seconds<=10?Colors.red.shade900:Colors.white,fontSize:23,fontWeight:FontWeight.bold)),if(seconds<=10)const Text('SON 10!',style:TextStyle(color:Colors.white,fontSize:10,fontWeight:FontWeight.bold))]),
                     IconButton(onPressed:_shareRoomCode,icon:const Icon(Icons.copy,color:Colors.white),tooltip:'Oda kodunu kopyala'),
@@ -288,7 +294,7 @@ class _OnlineGamePageState extends State<OnlineGamePage> {
                       tween:Tween(begin:0,end:6.0),duration:const Duration(seconds:3),
                       builder:(context,v,child)=>Transform.rotate(angle:v,child:child),
                       child:CircleAvatar(radius:50,backgroundColor:orange,
-                        child:Text('${room!['letter']}',style:const TextStyle(fontSize:50,color:Colors.white)))),
+                        child:const Text('?',style:TextStyle(fontSize:50,color:Colors.white)))),
                     const SizedBox(height:12),
                     const Text('HARF ÇARKI DÖNÜYOR!',style:TextStyle(color:orange,fontWeight:FontWeight.bold)),
                   ]))),
