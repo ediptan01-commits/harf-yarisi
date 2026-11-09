@@ -285,6 +285,28 @@ class _GamePageState extends State<GamePage> with WidgetsBindingObserver {
             TextButton.icon(onPressed: showStandings, icon: const Icon(Icons.leaderboard, size: 16),
               label: const Text('Puanlar'), style: TextButton.styleFrom(foregroundColor: orange, visualDensity: VisualDensity.compact)),
           ]),
+          if (!keyboard) Padding(
+            padding: const EdgeInsets.only(top: 3, bottom: 3),
+            child: SizedBox(
+              width: double.infinity,
+              height: 33,
+              child: OutlinedButton.icon(
+                onPressed: running ? null : () => Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => const OnlineGamePage()),
+                ),
+                icon: const Icon(Icons.wifi, size: 16),
+                label: const Text('ONLINE • DÜELLO • JOKERLER • ARKADAŞ ODASI',
+                  style: TextStyle(fontSize: 10, fontWeight: FontWeight.w800)),
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: orange,
+                  side: const BorderSide(color: Color(0xFFFFA244)),
+                  padding: const EdgeInsets.symmetric(horizontal: 5),
+                  visualDensity: VisualDensity.compact,
+                ),
+              ),
+            ),
+          ),
           SizedBox(height: keyboard ? 3 : 5),
           if (keyboard) Container(
             width: double.infinity,
